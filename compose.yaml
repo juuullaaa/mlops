@@ -1,0 +1,43 @@
+services:
+  # TensorFlow Serving container (GPU-enabled)
+  # Hosts the object detection model and exposes REST API for inference
+  tf-serving:
+    image: tensorflow/serving:latest-gpu
+    container_name: tf-serving
+    gpus: all
+
+    ports:
+      - "8501:8501"
+
+    volumes:
+      - ./models/my_model:/models/my_model
+
+    environment:
+      - MODEL_NAME=my_model
+
+    command: >
+      tensorflow_model_server
+      --rest_api_port=8501
+      --model_name=my_model
+      --model_base_path=/models/my_model
+
+  # Flask application container
+  # Handles uploads, sends requests to TF Serving, stores outputs, metrics, and feedback
+  flask-app:
+    build: .
+    container_name: flask-app
+
+    ports:
+      - "5000:5000"
+
+    volumes:
+      - ./originals:/app/originals
+      - ./results:/app/results
+      - ./data:/app/data
+
+    environment:
+      - TF_SERVING_URL=http://tf-serving:8501/v1/models/my_model:predict
+      - SECRET_KEY=super_secure_random_key
+
+    depends_on:
+      - tf-serving

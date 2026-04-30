@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Metadata -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics</title>
+
+    <!-- Stylesheets -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Navigation Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-paw"></i>
+            </div>
+            <div>
+                <h2>Wildlife Object Detection</h2>
+                <p>Dashboard</p>
+            </div>
+        </div>
+
+        <!-- Sidebar Buttons -->
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('index') }}" class="sidebar-link">
+                <i class="bi bi-house"></i>Home
+            </a>
+            <a href="{{ url_for('metrics') }}" class="sidebar-link active">
+                <i class="bi bi-graph-up"></i>Metrics
+            </a>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <p>7147COMP © 2026</p>
+        </div>
+    </aside>
+
+    <!-- Main Page -->
+    <main class="main-content">
+
+        <!-- Page Header -->
+        <div class="topbar">
+            <div>
+                <h1 class="page-title">Metrics 📊</h1>
+                <p class="page-subtitle">
+                    Monitor inference performance, service health, and post-deployment feedback to enable continuous monitoring and model improvement.
+                </p>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mt-3">
+                    {% for category, message in messages %}
+                        {% if category == 'error' %}
+                            <div class="alert alert-danger custom-alert" role="alert">{{ message }}</div>
+                        {% elif category == 'success' %}
+                            <div class="alert alert-success custom-alert" role="alert">{{ message }}</div>
+                        {% else %}
+                            <div class="alert alert-info custom-alert" role="alert">{{ message }}</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Overview panel -->
+        <section class="hero-panel compact-panel">
+            <div class="hero-text">
+                <span class="hero-badge">MLOps Monitoring</span>
+                <h2>Metrics Dashboard</h2>
+                <p>
+                    This dashboard provides insights into the operational performance of the deployed object detection system,
+                    including request volume, latency, system reliability, TensorFlow Serving status, and structured user feedback
+                    to support continuous monitoring and post-deployment evaluation.
+                </p>
+            </div>
+        </section>
+
+        <!-- Inference Performance -->
+        <div class="dashboard-card mt-4">
+            <div class="card-header-clean">
+                <div>
+                    <h3>Inference Performance</h3>
+                    <p>Metrics related to request processing, service reliability, and inference latency.</p>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Total Requests</span>
+                        <h3>{{ metrics.total_requests }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Successful Requests</span>
+                        <h3>{{ metrics.successful_requests }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Failed Requests</span>
+                        <h3>{{ metrics.failed_requests }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Success Rate</span>
+                        <h3>{{ metrics.success_rate }} <small>%</small></h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Failure Rate</span>
+                        <h3>{{ metrics.failure_rate }} <small>%</small></h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Average Latency</span>
+                        <h3>{{ (metrics.average_latency / 1000) | round(2) }} <small>s</small></h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Latest Latency</span>
+                        <h3>{{ (metrics.latest_latency / 1000) | round(2) }} <small>s</small></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Status -->
+        <div class="dashboard-card mt-4">
+            <div class="card-header-clean">
+                <div>
+                    <h3>Service Status and Traceability</h3>
+                    <p>
+                        Current operational state of the Flask application and TensorFlow Serving layer,
+                        including model availability, request handling status, and readiness for real-time inference.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">TensorFlow Serving Status</span>
+                        <h3 class="small-metric">{{ metrics.tf_serving_status }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Model Version</span>
+                        <h3>{{ metrics.model_version }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">GPU Enabled</span>
+                        <h3>{{ metrics.gpu_enabled }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Metadata -->
+            <div class="table-responsive mt-4">
+                <table class="table polished-table align-middle mb-0">
+                    <tbody>
+                        <tr>
+                            <th>Last Request Time</th>
+                            <td>{{ metrics.last_request_time }}</td>
+                        </tr>
+                        <tr>
+                            <th>Application Version</th>
+                            <td>{{ metrics.app_version }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Feedback Monitoring -->
+        <div class="dashboard-card mt-4">
+            <div class="card-header-clean">
+                <div>
+                    <h3>User Feedback Monitoring</h3>
+                    <p>
+                        Structured user feedback on inference quality to support continuous monitoring, error analysis,
+                        and future improvement of the model.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Total Feedback</span>
+                        <h3>{{ metrics.total_feedback }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Positive Feedback</span>
+                        <h3>{{ metrics.positive_feedback }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Negative Feedback</span>
+                        <h3>{{ metrics.negative_feedback }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="metric-box">
+                        <span class="metric-label">Images With Feedback</span>
+                        <h3>{{ metrics.unique_images_with_feedback }}</h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Positive Feedback Rate</span>
+                        <h3>{{ metrics.positive_feedback_rate }} <small>%</small></h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Negative Feedback Rate</span>
+                        <h3>{{ metrics.negative_feedback_rate }} <small>%</small></h3>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="metric-box">
+                        <span class="metric-label">Latest Feedback Time</span>
+                        <h3 class="small-metric">{{ metrics.latest_feedback_time }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Explanation -->
+            <div class="dashboard-card info-card mt-4">
+                <h3>Role of Feedback in Model Monitoring</h3>
+                <p class="mb-0">
+                    Positive and negative user feedback provides a post-deployment monitoring mechanism.
+                    Negative feedback helps identify incorrect classifications, missed detections, and other prediction issues,
+                    while positive feedback provides a useful signal of model performance and prediction reliability in real-world use.
+                </p>
+            </div>
+        </div>
+
+        <!-- Bottom Button -->
+        <div class="d-flex gap-2 flex-wrap mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-4">Upload Another Image</a>
+        </div>
+    </main>
+
+</body>
+</html>

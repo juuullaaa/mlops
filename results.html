@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Metadata -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+
+    <!-- Stylesheets -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- Navigation Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-paw"></i>
+            </div>
+            <div>
+                <h2>Wildlife Object Detection</h2>
+                <p>Dashboard</p>
+            </div>
+        </div>
+
+        <!-- Sidebar Buttons -->
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('index') }}" class="sidebar-link">
+                <i class="bi bi-house"></i>Home
+            </a>
+            <a href="{{ url_for('metrics') }}" class="sidebar-link">
+                <i class="bi bi-graph-up"></i>Metrics
+            </a>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <p>7147COMP © 2026</p>
+        </div>
+    </aside>
+
+    <!-- Main Page -->
+    <main class="main-content">
+
+        <!-- Page Header -->
+        <div class="topbar">
+            <div>
+                <h1 class="page-title">Results 🏁</h1>
+                <p class="page-subtitle">
+                    Review the annotated image alongside detected objects and their associated confidence scores,
+                    and provide feedback to support ongoing model evaluation.
+                </p>
+            </div>
+        </div>
+
+        <!-- Overview Panel -->
+        <section class="hero-panel compact-panel">
+            <div class="hero-text">
+                <span class="hero-badge">Inference Completed</span>
+                <h2>Detection Results</h2>
+                <p>
+                    Compare the original image with the annotated output and review the detected objects and their
+                    confidence scores.
+                </p>
+            </div>
+        </section>
+
+        <!-- Image Panels -->
+        <div class="row g-4 mt-4">
+            <div class="col-xl-6">
+                <div class="dashboard-card">
+                    <div class="card-header-clean">
+                        <div>
+                            <h3>Original Image</h3>
+                            <p>Image submitted by user before inference</p>
+                        </div>
+                    </div>
+
+                    <div class="image-panel">
+                        {% if original_image %}
+                            <img src="{{ url_for('serve_original', filename=original_image) }}" alt="Original image" class="result-image">
+                        {% else %}
+                            <div class="empty-state">No original image available.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6">
+                <div class="dashboard-card">
+                    <div class="card-header-clean">
+                        <div>
+                            <h3>Annotated Image</h3>
+                            <p>Image with bounding boxes and confidence labels after inference</p>
+                        </div>
+                    </div>
+
+                    <div class="image-panel">
+                        {% if annotated_image %}
+                            <img src="{{ url_for('serve_result', filename=annotated_image) }}" alt="Annotated image" class="result-image">
+                        {% else %}
+                            <div class="empty-state">No annotated image available.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="row g-3 mt-1 result-summary-row">
+            <div class="col-md-4">
+                <div class="metric-box image-name-box">
+                    <span class="metric-label">Image Name</span>
+                    <h3>{{ original_image }}</h3>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <span class="metric-label">Inference Time</span>
+                    <h3>{{ inference_time_s }} <small>s</small></h3>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <span class="metric-label">Objects Detected</span>
+                    <h3>{{ object_count }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detection Summary Table -->
+        <div class="dashboard-card mt-4">
+            <div class="card-header-clean">
+                <div>
+                    <h3>Detection Summary</h3>
+                    <p>Detected labels and associated confidence scores</p>
+                </div>
+            </div>
+
+            {% if detections %}
+                <div class="table-responsive">
+                    <table class="table polished-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Image Name</th>
+                                <th>Detected Object</th>
+                                <th>Confidence Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for det in detections %}
+                            <tr>
+                                <td>{{ original_image }}</td>
+                                <td>{{ det.label }}</td>
+                                <td>
+                                    <span class="confidence-pill">{{ (det.score * 100) | round(1) }}%</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">No detections found.</div>
+            {% endif %}
+        </div>
+
+        <!-- Feedback Form -->
+        <div class="dashboard-card mt-4" id="feedback-section">
+            <div class="card-header-clean">
+                <div>
+                    <h3>Prediction Feedback</h3>
+                    <p>Provide structured feedback to support post-deployment monitoring and model improvement.</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('submit_feedback') }}" method="POST" id="feedbackForm">
+                <input type="hidden" name="image_name" value="{{ original_image }}">
+
+                <!-- Feedback Type -->
+                <div class="mb-3">
+                    <label class="form-label form-label-custom" for="feedback_type">Please share your feedback below</label>
+                    <select name="feedback_type" id="feedback_type" class="form-select" required onchange="handleFeedbackType()">
+                        <option value="" selected disabled>Select an option</option>
+                        <option value="positive">Positive</option>
+                        <option value="negative">Negative</option>
+                    </select>
+                </div>
+
+                <!-- Negative -->
+                <div id="negative-section" class="feedback-fields-hidden">
+                    <div class="mb-3">
+                        <label class="form-label form-label-custom" for="error_type">Select category</label>
+                        <select name="error_type" id="error_type" class="form-select" onchange="handleErrorType()">
+                            <option value="" selected disabled>Select category</option>
+                            <option value="wrong_label">Wrong Label</option>
+                            <option value="missed_label">Missed Label</option>
+                        </select>
+                    </div>
+
+                    <!-- Wrong Label -->
+                    <div id="wrong-label-section" class="feedback-fields-hidden">
+                        <div class="mb-3">
+                            <label for="predicted_label" class="form-label form-label-custom">Which label was incorrect?</label>
+                            <select name="predicted_label" id="predicted_label" class="form-select">
+                                <option value="" selected disabled>
+                                    {% if detections %}Select detected label{% else %}No detections available{% endif %}
+                                </option>
+                                {% for det in detections %}
+                                    <option value="{{ det.label }}">{{ det.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="correct_label" class="form-label form-label-custom">What is the correct label?</label>
+                            <input type="text" name="correct_label" id="correct_label" class="form-control" placeholder="Enter the correct object label">
+                        </div>
+                    </div>
+
+                    <!-- Missed Label -->
+                    <div id="missed-label-section" class="feedback-fields-hidden">
+                        <div class="mb-3">
+                            <label for="missed_label" class="form-label form-label-custom">What should the label be?</label>
+                            <input type="text" name="missed_label" id="missed_label" class="form-control" placeholder="Enter the missed object label">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary" id="feedbackBtn">Submit Feedback</button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="feedbackLoading" class="mt-3 d-none">
+                    <div class="processing-box">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="spinner-border text-success custom-green-spinner" role="status" aria-hidden="true"></div>
+                            <div>
+                                <h6 class="mb-1">Submitting feedback...</h6>
+                                <p class="mb-0 text-muted">Please wait while we save your response.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mt-4" id="feedback-message">
+                    {% for category, message in messages %}
+                        {% if category == 'error' %}
+                            <div class="alert alert-danger custom-alert" role="alert">{{ message }}</div>
+                        {% elif category == 'success' %}
+                            <div class="alert alert-success custom-alert" role="alert">{{ message }}</div>
+                        {% else %}
+                            <div class="alert alert-info custom-alert" role="alert">{{ message }}</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Bottom Buttons -->
+        <div class="d-flex gap-2 flex-wrap mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-4">Upload Another Image</a>
+            <a href="{{ url_for('metrics') }}" class="btn btn-outline-secondary btn-lg px-4">View Metrics</a>
+        </div>
+    </main>
+
+    <script>
+        // Controls visibility and validation of feedback form fields
+        function handleFeedbackType() {
+            const type = document.getElementById("feedback_type").value;
+
+            const negative = document.getElementById("negative-section");
+            const errorType = document.getElementById("error_type");
+            const wrong = document.getElementById("wrong-label-section");
+            const missed = document.getElementById("missed-label-section");
+
+            const predictedLabel = document.getElementById("predicted_label");
+            const correctLabel = document.getElementById("correct_label");
+            const missedLabel = document.getElementById("missed_label");
+
+            negative.classList.add("feedback-fields-hidden");
+            wrong.classList.add("feedback-fields-hidden");
+            missed.classList.add("feedback-fields-hidden");
+
+            if (errorType) {
+                errorType.value = "";
+            }
+
+            if (predictedLabel) {
+                predictedLabel.value = "";
+                predictedLabel.required = false;
+            }
+
+            if (correctLabel) {
+                correctLabel.value = "";
+                correctLabel.required = false;
+            }
+
+            if (missedLabel) {
+                missedLabel.value = "";
+                missedLabel.required = false;
+            }
+
+            if (type === "negative") {
+                negative.classList.remove("feedback-fields-hidden");
+            }
+        }
+
+        // Controls visibility and validation of negative feedback fields
+        function handleErrorType() {
+            const errorType = document.getElementById("error_type").value;
+
+            const wrong = document.getElementById("wrong-label-section");
+            const missed = document.getElementById("missed-label-section");
+
+            const predictedLabel = document.getElementById("predicted_label");
+            const correctLabel = document.getElementById("correct_label");
+            const missedLabel = document.getElementById("missed_label");
+
+            wrong.classList.add("feedback-fields-hidden");
+            missed.classList.add("feedback-fields-hidden");
+
+            predictedLabel.required = false;
+            correctLabel.required = false;
+            missedLabel.required = false;
+
+            predictedLabel.value = "";
+            correctLabel.value = "";
+            missedLabel.value = "";
+
+            if (errorType === "wrong_label") {
+                wrong.classList.remove("feedback-fields-hidden");
+                predictedLabel.required = true;
+                correctLabel.required = true;
+            }
+
+            if (errorType === "missed_label") {
+                missed.classList.remove("feedback-fields-hidden");
+                missedLabel.required = true;
+            }
+        }
+        window.onload = function () {
+            const alertBox = document.getElementById("feedback-message");
+            if (alertBox) {
+                alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        };
+
+        // Show loading state
+        const feedbackForm = document.getElementById("feedbackForm");
+        const feedbackBtn = document.getElementById("feedbackBtn");
+        const feedbackLoading = document.getElementById("feedbackLoading");
+
+        feedbackForm.addEventListener("submit", function () {
+            feedbackLoading.classList.remove("d-none");
+            feedbackBtn.disabled = true;
+            feedbackBtn.innerText = "Submitting...";
+        });
+    </script>
+
+</body>
+</html>
